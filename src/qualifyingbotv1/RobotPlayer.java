@@ -1,17 +1,17 @@
-/*In the team array 5, and 6 and 7 are used for max Scouts and Gardeners, 
+/* CHANGES
+* updated solider
+* updated tank
+* updated tryDonate()
+* not sure if I updated ljs
+* put the old gardener code back, but modified it somewhere maybe
+*/
+
+/*In the team array 5, and 6 and 7 are used for max Scouts and Gardeners,
 987 is the Archon thing with broadcasting 0 for counting
 400-599 is for enemies
 and 600-799 is for trees
 */
-
-/*
-        ISSUES
-* soldiers fire their own gardeners in trying to shoot a neutral tree
-* Soldiers need to move towards enemies, but stay a certain distance away so that they aren't in lj strike radius
-* Gardeners move diagonally left down until they hit something, and then they start building trees
-    * SOLUTION: currentDirection is set to 1, so it never changes (1 is DL). Make it moveOnDiagonal() instead;
-* */
-package qualifyingbotabhi;
+package qualifyingbotv1;
 
 import battlecode.common.*;
 
@@ -41,6 +41,7 @@ public strictfp class RobotPlayer {
     static int PRIME_ARCHON_CHANNEL = 987;
     static int GARDENER_MAX = 8;
     static int SCOUT_MAX = 10;
+    static final float SAFE_DIST_AWAY_FROM_LJ = RobotType.LUMBERJACK.bodyRadius + GameConstants.LUMBERJACK_STRIKE_RADIUS + 3;
     static float minTreeHealth;
     static Team enemy;
     static Team homeTeam;
@@ -135,7 +136,6 @@ public strictfp class RobotPlayer {
     static void runGardener() throws GameActionException {
         while (true) {
             try {
-
                 prevNumScout = rc.readBroadcast(SCOUT_CHANNEL);
                 prevNumGard = rc.readBroadcast(GARDENER_CHANNEL);
                 rc.broadcast(GARDENER_CHANNEL, prevNumGard + 1);
@@ -151,9 +151,7 @@ public strictfp class RobotPlayer {
                 if (prevNumScout < SCOUT_MAX && rc.canBuildRobot(RobotType.SCOUT, dir)) {
                     rc.buildRobot(RobotType.SCOUT, dir);
                     rc.broadcast(SCOUT_CHANNEL, prevNumScout + 1);
-                }/* else if (rc.canBuildRobot(RobotType.SOLDIER, dir) && rc.isBuildReady()) {
-                    rc.buildRobot(RobotType.SOLDIER, dir);
-                }*/ else if (rc.canBuildRobot(RobotType.LUMBERJACK, dir) && rc.isBuildReady() && dRand < .7) {
+                } else if (rc.canBuildRobot(RobotType.LUMBERJACK, dir) && rc.isBuildReady() && dRand < .7) {
                     rc.buildRobot(RobotType.LUMBERJACK, dir);
                 } else if (rc.canBuildRobot(RobotType.SOLDIER, dir) && rc.isBuildReady()) {
                     rc.buildRobot(RobotType.SOLDIER, dir);
@@ -232,7 +230,7 @@ public strictfp class RobotPlayer {
                             }
                         }
                         Direction toEnemy = currentLoc.directionTo(enemy.location);
-                        MapLocation enemyRobot = enemy.location.subtract(toEnemy, RobotType.LUMBERJACK.bodyRadius + GameConstants.LUMBERJACK_STRIKE_RADIUS + 2);
+                        MapLocation enemyRobot = enemy.location.subtract(toEnemy, SAFE_DIST_AWAY_FROM_LJ);
                         tryMove(currentLoc.directionTo(enemyRobot));
                         break;
                     }
@@ -272,11 +270,14 @@ public strictfp class RobotPlayer {
                 }
                 currentLoc = rc.getLocation();
                 nearbyEnemies = rc.senseNearbyRobots(-1, enemy);
+                nearbyRobots = rc.senseNearbyRobots(-1, homeTeam);
+                // gotta do smth about shooting our own ljs
                 for (RobotInfo enemy : nearbyEnemies) {
-                    if (rc.canFirePentadShot()) {
+                    /*if (rc.canFirePentadShot()) {
                         rc.firePentadShot(currentLoc.directionTo(enemy.location));
                         break;
-                    } else if (rc.canFireTriadShot()) {
+                    } else*/
+                    if (rc.canFireTriadShot()) {
                         rc.fireTriadShot(currentLoc.directionTo(enemy.location));
                         break;
                     } else if (rc.canFireSingleShot()) {
@@ -284,67 +285,6 @@ public strictfp class RobotPlayer {
                         break;
                     }
                 }
-                /*for (TreeInfo t : nearbyTrees) {
-                    if (t.getTeam() != homeTeam) {
-                        if (rc.canFireSingleShot()) {
-                            rc.fireSingleShot(currentLoc.directionTo(t.location));
-                        } else if (!rc.hasMoved()) {
-                            nXPos = 600;
-                            while (true) {
-                                if (rc.readBroadcast(nXPos) == 0) {
-                                    rc.broadcast(nXPos, Math.round(t.location.x));
-                                    rc.broadcast(nXPos + 1, Math.round(t.location.y));
-                                    break;
-                                } else {
-                                    nXPos += 2;
-                                    if (nXPos > 799) {
-                                        break;
-                                    }
-                                }
-                            }
-                            if (!rc.hasMoved()) {
-                                tryMove(currentLoc.directionTo(t.location));
-                            } else {
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (!rc.hasMoved()) {
-                    //System.out.println("GONNA READ TREES");
-                    nXPos = 600;
-                    while (true) {
-                        if (rc.readBroadcast(nXPos) > 0) {
-                            MapLocation enemyTree = new MapLocation(rc.readBroadcast(nXPos), rc.readBroadcast(nXPos + 1));
-                            if (rc.canSenseLocation(enemyTree)) {
-                                if (rc.senseTreeAtLocation(enemyTree) != null) {
-                                    //System.out.println("GO TO THE TREE");
-                                    Direction dirToEnemyTree = new Direction(currentLoc, enemyTree);
-                                    tryMove(dirToEnemyTree, 20, 6);
-                                    break;
-                                } else {
-                                    rc.broadcast(nXPos, 0);
-                                    rc.broadcast(nXPos + 1, 0);
-                                }
-                            } else {
-                                //System.out.println("GO TO THE TREE");
-                                Direction dirToEnemyTree = new Direction(currentLoc, enemyTree);
-                                tryMove(dirToEnemyTree, 20, 6);
-                                break;
-                            }
-
-                        } else {
-                            nXPos += 2;
-                            if (nXPos > 799) {
-                                //System.out.println("Nothing to read in trees");
-                                if (!tryMove(dirList[currentDirection])) {
-                                    currentDirection = moveOnDiagonal();
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }*/
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
 
@@ -708,63 +648,132 @@ public strictfp class RobotPlayer {
 
 
     static void runTank() throws GameActionException {
+        nXPos = 0; // xPos of array
         while (true) {
             try {
                 dodge();
                 currentLoc = rc.getLocation();
+                nearbyTrees = rc.senseNearbyTrees(-1);
                 nearbyEnemies = rc.senseNearbyRobots(-1, enemy);
-
-                for (RobotInfo b : nearbyEnemies) {
-                    if (b.getTeam() != homeTeam && rc.canFireSingleShot()) {
-                        Direction enemyRoboDir = rc.getLocation().directionTo(b.getLocation());
-                        // System.out.println("SHOOTING THE ENEMY");
-                        rc.fireSingleShot(enemyRoboDir);
+                // move first, then fire
+                for (RobotInfo enemy : nearbyEnemies) {
+                    if (!rc.hasMoved()) {
+                        nXPos = 400;
+                        while (true) {
+                            if (rc.readBroadcast(nXPos) == 0) {
+                                rc.broadcast(nXPos, Math.round(enemy.location.x));
+                                rc.broadcast(nXPos + 1, Math.round(enemy.location.y));
+                                break;
+                            } else {
+                                nXPos += 2;
+                                if (nXPos > 599) {
+                                    break;
+                                }
+                            }
+                        }
+                        Direction toEnemy = currentLoc.directionTo(enemy.location);
+                        MapLocation enemyRobot = enemy.location.subtract(toEnemy, SAFE_DIST_AWAY_FROM_LJ);
+                        tryMove(currentLoc.directionTo(enemyRobot));
                         break;
                     }
                 }
-                TreeInfo[] trees = rc.senseNearbyTrees();
-                for (TreeInfo t : trees) {
-                    if (t.team != homeTeam) {
-                        if (rc.canFireSingleShot()) {
-                            rc.fireSingleShot(currentLoc.directionTo(t.location));
-                            // System.out.println("SHOOTING THE TREE");
-                        } else if (!rc.hasMoved()) {
-                            tryMove(currentLoc.directionTo(t.location));
+                if (!rc.hasMoved()) { // reading in enemies from broadcast
+                    nXPos = 400;
+                    while (true) {
+                        if (rc.readBroadcast(nXPos) > 0) {
+                            MapLocation enemyBot = new MapLocation(rc.readBroadcast(nXPos), rc.readBroadcast(nXPos + 1));
+                            if (!rc.canSenseLocation(enemyBot)) {
+                                //System.out.println("Trying to get the enemy in range");
+                                tryMove(currentLoc.directionTo(enemyBot));
+                                break;
+                            } else {
+                                // the robot will never be at the old location again sooo...
+                                if (rc.senseRobotAtLocation(enemyBot) != null) {
+                                    //System.out.println("GO TO THE ENEMY");
+                                    tryMove(currentLoc.directionTo(enemyBot));
+                                    break;
+                                } else {
+                                    rc.broadcast(nXPos, 0);
+                                    rc.broadcast(nXPos + 1, 0);
+                                }
+                            }
+                        } else {
+                            nXPos += 2;
+                            if (nXPos > 599) {
+                                //System.out.println("Nothing to read in nearbyEnemies");
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (!rc.hasMoved()) {
+                    currentDirection = moveOnDiagonal();
+                    tryMove(dirList[currentDirection]);
+                }
+                currentLoc = rc.getLocation();
+                nearbyEnemies = rc.senseNearbyRobots(-1, enemy);
+                for (RobotInfo enemy : nearbyEnemies) {
+                    if (rc.canFirePentadShot()) {
+                        rc.firePentadShot(currentLoc.directionTo(enemy.location));
+                        break;
+                    } else if (rc.canFireTriadShot()) {
+                        rc.fireTriadShot(currentLoc.directionTo(enemy.location));
+                        break;
+                    } else if (rc.canFireSingleShot()) {
+                        rc.fireSingleShot(currentLoc.directionTo(enemy.location));
+                        break;
+                    }
+                }
+                for (TreeInfo t : nearbyTrees) {
+                    if (t.getTeam() != homeTeam) {
+                        if (!rc.hasMoved()) {
+                            nXPos = 600;
+                            while (true) {
+                                if (rc.readBroadcast(nXPos) == 0) {
+                                    rc.broadcast(nXPos, Math.round(t.location.x));
+                                    rc.broadcast(nXPos + 1, Math.round(t.location.y));
+                                    break;
+                                } else {
+                                    nXPos += 2;
+                                    if (nXPos > 799) {
+                                        break;
+                                    }
+                                }
+                            }
+                            if (rc.canMove(t.location)) rc.move(t.location);
+                            if (!rc.hasMoved()) tryMove(currentLoc.directionTo(t.location));
+                        } else {
                             break;
                         }
                     }
                 }
                 if (!rc.hasMoved()) {
-                    // this is for trees
-                    // System.out.println("GONNA READ BROADCAST FOR TREES");
+                    //System.out.println("GONNA READ TREES");
                     nXPos = 600;
                     while (true) {
                         if (rc.readBroadcast(nXPos) > 0) {
                             MapLocation enemyTree = new MapLocation(rc.readBroadcast(nXPos), rc.readBroadcast(nXPos + 1));
                             if (rc.canSenseLocation(enemyTree)) {
                                 if (rc.senseTreeAtLocation(enemyTree) != null) {
-                                    if (rc.canFireSingleShot()) {
-                                        rc.fireSingleShot(currentLoc.directionTo(enemyTree));
-                                        //  System.out.println("SHOOTING THE TREE from Broadcast");
-                                    }
+                                    //System.out.println("GO TO THE TREE");
                                     Direction dirToEnemyTree = new Direction(currentLoc, enemyTree);
-                                    tryMove(dirToEnemyTree);
+                                    tryMove(dirToEnemyTree, 20, 6);
                                     break;
                                 } else {
                                     rc.broadcast(nXPos, 0);
                                     rc.broadcast(nXPos + 1, 0);
                                 }
                             } else {
-                                //System.out.println("GO TO THE ENEMY TREE");
+                                //System.out.println("GO TO THE TREE");
                                 Direction dirToEnemyTree = new Direction(currentLoc, enemyTree);
-                                tryMove(dirToEnemyTree);
+                                tryMove(dirToEnemyTree, 20, 6);
                                 break;
                             }
 
                         } else {
                             nXPos += 2;
                             if (nXPos > 799) {
-                                // System.out.println("Nothing to read");
+                                //System.out.println("Nothing to read in trees");
                                 if (!tryMove(dirList[currentDirection])) {
                                     currentDirection = moveOnDiagonal();
                                 }
@@ -803,9 +812,9 @@ public strictfp class RobotPlayer {
     }
 
     static void tryDonate() throws GameActionException {
-        /*if (rc.getTeamBullets() > rc.getVictoryPointCost()) {
-            rc.donate(rc.getVictoryPointCost());
-        }*/
+        if (rc.getTeamBullets() > rc.getVictoryPointCost() * 1000 + 1) {
+            rc.donate(rc.getVictoryPointCost() * 1000 + 1);
+        }
         if (rc.getTeamBullets() >= 10000.42) {
             rc.donate((float) (rc.getTeamBullets() - 0.42));
         }
