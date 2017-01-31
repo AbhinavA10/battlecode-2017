@@ -1,4 +1,4 @@
-Battlecode Project Scaffold
+Battlecode 2017
 ===========================
 
 Here you'll find (almost) everything you need to write players for Battlecode
