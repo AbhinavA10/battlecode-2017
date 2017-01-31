@@ -1,4 +1,4 @@
-/* CHANGES
+/* CHANGES - testing
 * updated solider
 * updated tank
 * updated tryDonate()
