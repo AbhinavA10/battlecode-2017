@@ -1,11 +1,7 @@
 Battlecode 2017
 ===========================
 
-Here you'll find (almost) everything you need to write players for Battlecode
-2017.
-
-Other documentation and resources can be found at: https://www.battlecode.org/
-
+https://www.battlecode.org/
 
 ## Overview
 
@@ -54,31 +50,12 @@ The Battlecode software consists of three major components:
 
 This project scaffold handles installing and running these components using Gradle.
 
-
-### What is Gradle?
-
-Gradle is a build system that expands upon the features of earlier build systems like Apache Ant and Apache Maven, utilizing a domain-specific language based off of Groovy, a JVM language.
-
-You can run it from a terminal or from an IDE; instructions are below.
-
-You can find Gradle's documentation at: https://gradle.org/
-
-You are not required to use the Gradle build script, but you should probably at
-least read it to get an idea of how things work.
-
-Note also that you are not required to install Gradle, even if you are working in command line.
-
-
 ## Getting started
 
 First, you'll need a Java Development Kit compatible with Java 8 or later.
 
 You can find JDK installers at:
 http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
-
-Alternatively, you can install a JDK yourself using your favorite package
-manager. Make sure it's an Oracle JDK - we don't support anything else -
-and is compatible with Java 8.
 
 If you're unsure how to install the JDK, you can find instructions for
 all operating systems here: 
@@ -220,11 +197,6 @@ the `maps` folder. Any maps placed there will be discovered by the client. For m
 about how to write your own map files, check the specs.
 
 We recommend using the map editor to create maps. The map editor can be ran from the client. Instructions can be found within the client.
-
-## Scala
-
-Most contestants choose to write their players in Java, but we also support
-Scala (or a mix of Java and Scala) out of the box, with the standard install.
 
 ## Debugging
 Using a "debugger" lets you pause your code while its running and inspect its state - what your variables are set to, what methods you're calling, and so on. You can walk through your code step-by-step, and run arbitrary commands.

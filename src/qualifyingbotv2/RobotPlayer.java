@@ -1,11 +1,4 @@
-/* CHANGES
-* updated solider
-* updated tank
-* updated tryDonate()
-* not sure if I updated ljs
-* put the old gardener code back, but modified it somewhere maybe
-*/
-
+// This is our final submission
 /*In the team array 5, and 6 and 7 are used for max Scouts and Gardeners,
 987 is the Archon thing with broadcasting 0 for counting
 400-599 is for enemies
